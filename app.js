@@ -1,10 +1,10 @@
 // 配置
 const config = {
-    ballSize: 0.15,
+    // 球體大小將根據針腳間距自動計算
     pinSize: 0.08,
-    pinSpacing: 0.7,  // 縮小針腳間距
-    rows: 8,          // 減少行數，縮短板高
-    binCount: 9,      // rows + 1
+    pinSpacing: 0.5,  // 縮小針腳間距
+    rows: 12,         // 增加行數
+    binCount: 13,     // rows + 1
     ballColor: 0xffffff,
     pinColor: 0xf5c542,
     gravity: 9.8,
@@ -13,16 +13,22 @@ const config = {
     maxBalls: 500,    // 增加最大球數量
     maxSettledBalls: 300, // 收集區允許的最大球數
     ballDelay: 150,   // ms between ball drops
-    ballStackOffset: 0.25, // 調整球在箱子中的堆疊間距
+    ballStackOffset: 0.3, // 調整球在箱子中的堆疊間距，增加堆疊密度
     boardColor: 0x444444,
     binColor: 0x555555,
     standColor: 0x222222,
     // 縮放因子 - 用於整體縮小場景使所有元素在視野中
-    scaleFactor: 0.8,
+    scaleFactor: 0.6,  // 更小的縮放因子以適應更寬的板
     // 相機設置
-    cameraZoom: 40,   // 相機視野
+    cameraZoom: 35,   // 更廣的視野
     // 針腳區域向上偏移量
-    pinAreaOffset: 0.3
+    pinAreaOffset: 0.3,
+    
+    // 獲取當前球體大小（自動根據針腳間距計算）
+    getBallSize: function() {
+        // 球體大小為針腳間距的20%
+        return this.pinSpacing * 0.2;
+    }
 };
 
 // App state
@@ -59,7 +65,9 @@ const state = {
                     // Check collisions with pins
                     state.pins.forEach(pin => {
                         const distance = ball.position.distanceTo(pin.position);
-                        const minDist = config.ballSize/2 + config.pinSize/2;
+                        // 使用自動計算的球體大小
+                        const ballSize = config.getBallSize();
+                        const minDist = ballSize/2 + config.pinSize/2;
                         
                         if (distance < minDist) {
                             // Handle collision
@@ -112,10 +120,10 @@ const state = {
                             ball.position.x = bin.position.x;
                             if (isInverted) {
                                 // 如果裝置倒置，球在頂部的收集箱中堆疊
-                                ball.position.y = bottomY + (ballsInBin * config.ballSize * config.ballStackOffset);
+                                ball.position.y = bottomY + (ballsInBin * config.getBallSize() * config.ballStackOffset);
                             } else {
                                 // 正常方向，球在底部的收集箱中堆疊
-                                ball.position.y = bottomY + (ballsInBin * config.ballSize * config.ballStackOffset);
+                                ball.position.y = bottomY + (ballsInBin * config.getBallSize() * config.ballStackOffset);
                             }
                             
                             ball.position.z = 0;
@@ -128,11 +136,13 @@ const state = {
                     }
                     
                     // Boundary checks for the left and right walls
-                    if (ball.position.x < -boardWidth/2 + config.ballSize) {
-                        ball.position.x = -boardWidth/2 + config.ballSize;
+                    // 使用自動計算的球體大小
+                    const ballSize = config.getBallSize();
+                    if (ball.position.x < -boardWidth/2 + ballSize) {
+                        ball.position.x = -boardWidth/2 + ballSize;
                         ball.velocity.x *= -config.restitution;
-                    } else if (ball.position.x > boardWidth/2 - config.ballSize) {
-                        ball.position.x = boardWidth/2 - config.ballSize;
+                    } else if (ball.position.x > boardWidth/2 - ballSize) {
+                        ball.position.x = boardWidth/2 - ballSize;
                         ball.velocity.x *= -config.restitution;
                     }
                     
@@ -205,6 +215,9 @@ function init() {
         window.addEventListener('deviceorientation', handleOrientation);
     }
     
+    // 添加高爾頓板參數調整控制項
+    setupBoardControls();
+    
     // Add event listeners for buttons
     document.getElementById('reset-btn').addEventListener('click', resetBoard);
     document.getElementById('start-btn').addEventListener('click', startSimulation);
@@ -245,6 +258,135 @@ function init() {
     
     // Start animation loop
     animate();
+}
+
+// 設置高爾頓板參數控制面板
+function setupBoardControls() {
+    // 檢查控制面板是否已經存在
+    if (document.getElementById('board-controls')) return;
+    
+    // 創建控制面板容器
+    const controlsContainer = document.createElement('div');
+    controlsContainer.id = 'board-controls';
+    controlsContainer.style.position = 'fixed';
+    controlsContainer.style.top = '10px';
+    controlsContainer.style.right = '10px';
+    controlsContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    controlsContainer.style.padding = '10px';
+    controlsContainer.style.borderRadius = '5px';
+    controlsContainer.style.color = 'white';
+    controlsContainer.style.zIndex = '1000';
+    controlsContainer.style.maxWidth = '250px';
+    
+    // 創建標題
+    const title = document.createElement('h3');
+    title.textContent = '高爾頓板參數設置';
+    title.style.margin = '0 0 10px 0';
+    title.style.fontSize = '16px';
+    controlsContainer.appendChild(title);
+    
+    // 創建參數控制項 - 移除球體大小控制項，因為它現在是自動計算的
+    const parameters = [
+        { id: 'rows', label: '行數', min: 5, max: 30, value: config.rows },
+        { id: 'pin-spacing', label: '針腳間距', min: 0.3, max: 1.0, step: 0.05, value: config.pinSpacing },
+        { id: 'scale-factor', label: '縮放比例', min: 0.3, max: 1.0, step: 0.05, value: config.scaleFactor }
+    ];
+    
+    // 添加每個控制項
+    parameters.forEach(param => {
+        const controlGroup = document.createElement('div');
+        controlGroup.style.marginBottom = '10px';
+        
+        const label = document.createElement('label');
+        label.textContent = param.label + ': ';
+        label.style.display = 'block';
+        label.style.marginBottom = '5px';
+        controlGroup.appendChild(label);
+        
+        const valueDisplay = document.createElement('span');
+        valueDisplay.id = `${param.id}-value`;
+        valueDisplay.textContent = param.value;
+        valueDisplay.style.marginLeft = '5px';
+        valueDisplay.style.fontWeight = 'bold';
+        label.appendChild(valueDisplay);
+        
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.min = param.min;
+        slider.max = param.max;
+        slider.step = param.step || 1;
+        slider.value = param.value;
+        slider.style.width = '100%';
+        slider.addEventListener('input', function() {
+            valueDisplay.textContent = this.value;
+            
+            // 更新配置
+            if (param.id === 'rows') {
+                config.rows = parseInt(this.value);
+                config.binCount = config.rows + 1;
+            } else if (param.id === 'pin-spacing') {
+                config.pinSpacing = parseFloat(this.value);
+            } else if (param.id === 'scale-factor') {
+                config.scaleFactor = parseFloat(this.value);
+                state.sceneContainer.scale.set(
+                    config.scaleFactor, 
+                    config.scaleFactor, 
+                    config.scaleFactor
+                );
+            }
+        });
+        controlGroup.appendChild(slider);
+        
+        controlsContainer.appendChild(controlGroup);
+    });
+    
+    // 添加應用按鈕
+    const applyButton = document.createElement('button');
+    applyButton.textContent = '應用更改';
+    applyButton.style.width = '100%';
+    applyButton.style.padding = '8px';
+    applyButton.style.backgroundColor = '#f5c542';
+    applyButton.style.border = 'none';
+    applyButton.style.borderRadius = '4px';
+    applyButton.style.cursor = 'pointer';
+    applyButton.style.fontWeight = 'bold';
+    applyButton.style.marginTop = '10px';
+    applyButton.addEventListener('click', function() {
+        // 停止所有活動
+        stopSimulation();
+        
+        // 重新創建面板
+        rebuildBoard();
+    });
+    controlsContainer.appendChild(applyButton);
+    
+    // 添加到文檔
+    document.body.appendChild(controlsContainer);
+}
+
+// 重建高爾頓板
+function rebuildBoard() {
+    // 清理舊的針腳和收集槽
+    while (state.pins.length > 0) {
+        const pin = state.pins.pop();
+        state.sceneContainer.remove(pin);
+    }
+    
+    while (state.bins.length > 0) {
+        const bin = state.bins.pop();
+        state.sceneContainer.remove(bin);
+    }
+    
+    // 移除所有子物體
+    while (state.sceneContainer.children.length > 0) {
+        state.sceneContainer.remove(state.sceneContainer.children[0]);
+    }
+    
+    // 重置球
+    resetBoard();
+    
+    // 重新創建面板
+    createBoard();
 }
 
 function createBoard() {
@@ -543,7 +685,7 @@ function addBall() {
                                 for (let i = 0; i < sameBinBalls.length; i++) {
                                     const boardHeight = config.rows * config.pinSpacing;
                                     const bottomY = state.isInverted ? boardHeight * 0.3 : -boardHeight * 0.7;
-                                    sameBinBalls[i].position.y = bottomY + (i * config.ballSize * config.ballStackOffset);
+                                    sameBinBalls[i].position.y = bottomY + (i * config.getBallSize() * config.ballStackOffset);
                                 }
                                 
                                 removed = true;
@@ -570,9 +712,10 @@ function addBall() {
     const startY = state.isInverted ? -boardHeight * 0.7 : funnelPosition;
     const initialVelocity = state.isInverted ? new THREE.Vector3(0, 5, 0) : new THREE.Vector3(0, 0, 0);
     
-    // 創建球 - 增加發光效果使其更明顯
+    // 創建球 - 使用自動計算的球體大小
+    const ballSize = config.getBallSize();
     const hue = Math.random();
-    const ballGeometry = new THREE.SphereGeometry(config.ballSize, 32, 32);
+    const ballGeometry = new THREE.SphereGeometry(ballSize, 32, 32);
     const ballMaterial = new THREE.MeshPhongMaterial({ 
         color: new THREE.Color().setHSL(hue, 0.9, 0.7),
         specular: 0xffffff,
