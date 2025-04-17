@@ -1,51 +1,52 @@
-# Galton Board for Kids
+# 高爾頓板模擬器 (Galton Board)
 
-A fun, interactive Galton board (also known as a bean machine) simulation built with Three.js. The application demonstrates probability distribution in a visually engaging way suitable for children.
+一個有趣、互動式的高爾頓板（又稱豆機或球落板）模擬器，使用 Three.js 構建。這個應用程序以視覺化的方式展示概率分布，適合兒童教育和娛樂。
 
-## Features
+## 功能特色
 
-- Interactive 3D Galton board simulation
-- Responsive design that works on both desktop and mobile devices
-- "Hourglass mode" - flip your mobile device upside down to reset and restart automatically
-- Colorful, child-friendly interface
+- 互動式 3D 高爾頓板模擬
+- 響應式設計，同時支持桌面和移動設備
+- 色彩豐富、適合兒童的界面
+- 可自定義球數量
 
-## How to Use
+## 使用方法
 
-### On Desktop
+### 在桌面設備上
 
-1. Open `index.html` in any modern web browser
-2. Click the "Add Ball" button to start dropping balls
-3. Click "Reset" to clear all balls and start over
+1. 在任何現代瀏覽器中打開 `index.html`
+2. 輸入想要添加的球數量（默認為 100）
+3. 點擊 "Start" 按鈕開始投放球體
+4. 點擊 "Reset" 清除所有球體並重新開始
 
-### On Mobile
+### 在移動設備上
 
-1. Open `index.html` in a mobile browser
-2. Tap "Add Ball" to start dropping balls
-3. Flip your device upside down (like an hourglass) to reset and automatically start dropping new balls
-4. Turn your device back to normal orientation to stop the automatic ball dropping
+1. 在移動瀏覽器中打開 `index.html`
+2. 輸入想要添加的球數量
+3. 點擊 "Start" 開始投放球體
+4. 點擊 "Reset" 清除所有球體並重新開始
 
-## About the Galton Board
+## 關於高爾頓板
 
-The Galton board, also known as a bean machine or quincunx, is a device invented by Sir Francis Galton to demonstrate the central limit theorem and normal distribution. As balls fall through a triangular array of pegs, they are randomly deflected left or right, eventually forming a bell curve (normal distribution) in the bins at the bottom.
+高爾頓板，又稱豆機或球落板，是由弗朗西斯·高爾頓爵士發明的裝置，用來展示中心極限定理和正態分布。當球體穿過三角形排列的釘子時，它們被隨機向左或向右偏轉，最終在底部的收集槽中形成鐘形曲線（正態分布）。
 
-## Technical Details
+## 技術細節
 
-This application is built with:
+本應用使用以下技術構建：
 
 - HTML5
 - CSS3
 - JavaScript
-- Three.js for 3D rendering
+- Three.js 用於 3D 渲染
 
-## Running Locally
+## 本地運行
 
-Simply open the `index.html` file in a web browser. No server or installation required!
+只需在網頁瀏覽器中打開 `index.html` 文件即可。無需伺服器或安裝！
 
-For mobile device orientation features to work correctly, you may need to serve the files over HTTPS. There are several easy ways to do this:
+為了確保最佳體驗，您可能需要通過 HTTPS 提供文件。這裡有幾種簡單的方法：
 
-### Using Python (if installed)
+### 使用 Python（如已安裝）
 
-In the project directory, run:
+在項目目錄中運行：
 
 ```
 # Python 3
@@ -55,24 +56,24 @@ python -m http.server
 python -m SimpleHTTPServer
 ```
 
-Then open `http://localhost:8000` in your browser.
+然後在瀏覽器中打開 `http://localhost:8000`。
 
-### Using Node.js (if installed)
+### 使用 Node.js（如已安裝）
 
-Install a simple server globally:
+全局安裝一個簡單的伺服器：
 
 ```
 npm install -g serve
 ```
 
-Then in the project directory, run:
+然後在項目目錄中運行：
 
 ```
 serve
 ```
 
-And visit the URL shown in the terminal.
+訪問終端中顯示的 URL。
 
-### Using VS Code Live Server Extension
+### 使用 VS Code Live Server 擴展
 
-If using VS Code, you can install the "Live Server" extension and click "Go Live" in the status bar to serve your files. 
+如果使用 VS Code，您可以安裝 "Live Server" 擴展，然後點擊狀態欄中的 "Go Live" 來提供您的文件。 
