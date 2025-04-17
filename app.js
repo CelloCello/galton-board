@@ -26,8 +26,8 @@ const config = {
     
     // 獲取當前球體大小（自動根據針腳間距計算）
     getBallSize: function() {
-        // 球體大小為針腳間距的20%
-        return this.pinSpacing * 0.2;
+        // 將球體大小增加到針腳間距的24%
+        return this.pinSpacing * 0.24;
     }
 };
 
