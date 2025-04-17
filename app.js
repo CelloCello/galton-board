@@ -23,6 +23,8 @@ const config = {
     cameraZoom: 35,   // 更廣的視野
     // 針腳區域向上偏移量
     pinAreaOffset: 0.3,
+    // 梯形配置
+    trapezoidTopWidth: 0.5, // 頂部寬度相對於底部寬度的比例 (0.5 = 50%)
     
     // 獲取當前球體大小（自動根據針腳間距計算）
     getBallSize: function() {
@@ -324,7 +326,8 @@ function setupBoardControls() {
     const parameters = [
         { id: 'rows', label: '行數', min: 5, max: 30, value: config.rows },
         { id: 'pin-spacing', label: '針腳間距', min: 0.3, max: 1.0, step: 0.05, value: config.pinSpacing },
-        { id: 'scale-factor', label: '縮放比例', min: 0.3, max: 1.0, step: 0.05, value: config.scaleFactor }
+        { id: 'scale-factor', label: '縮放比例', min: 0.3, max: 1.0, step: 0.05, value: config.scaleFactor },
+        { id: 'trapezoid-width', label: '梯形頂部寬度', min: 0.1, max: 1.0, step: 0.05, value: config.trapezoidTopWidth }
     ];
     
     // 添加每個控制項
@@ -368,6 +371,8 @@ function setupBoardControls() {
                     config.scaleFactor, 
                     config.scaleFactor
                 );
+            } else if (param.id === 'trapezoid-width') {
+                config.trapezoidTopWidth = parseFloat(this.value);
             }
         });
         controlGroup.appendChild(slider);
@@ -499,7 +504,17 @@ function createBoard() {
     
     // 創建針腳，拉近間距，並提高整體針腳區位置
     for (let row = 0; row < config.rows; row++) {
-        const pinCount = row + 1;
+        // 計算當前行的針腳數量 - 梯形分佈
+        // 最上行（row=0）的寬度是底部寬度的 trapezoidTopWidth 比例
+        // 最下行（row=rows-1）的寬度是全寬
+        const progress = row / (config.rows - 1); // 從0到1的進度值
+        // 用線性插值計算針腳數量，確保最上行和最下行的針腳數量符合梯形要求
+        const pinCount = Math.floor(
+            config.trapezoidTopWidth * config.binCount + 
+            (1 - config.trapezoidTopWidth) * config.binCount * progress
+        );
+        
+        // 計算行的偏移量，使針腳居中對齊
         const rowOffset = (config.binCount - pinCount) * config.pinSpacing / 2;
         
         for (let i = 0; i < pinCount; i++) {
