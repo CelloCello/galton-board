@@ -20,7 +20,9 @@ const config = {
     // 縮放因子 - 用於整體縮小場景使所有元素在視野中
     scaleFactor: 0.8,
     // 相機設置
-    cameraZoom: 40   // 相機視野
+    cameraZoom: 40,   // 相機視野
+    // 針腳區域向上偏移量
+    pinAreaOffset: 0.3
 };
 
 // App state
@@ -92,9 +94,9 @@ const state = {
                     const boardWidth = config.binCount * config.pinSpacing;
                     const boardHeight = config.rows * config.pinSpacing;
                     
-                    // Top and bottom based on device orientation
+                    // Top and bottom based on device orientation, 考慮針腳區偏移
                     const isInverted = state.isInverted;
-                    const topY = isInverted ? -boardHeight * 0.7 : boardHeight * 0.3;
+                    const topY = isInverted ? -boardHeight * 0.7 : boardHeight * (0.3 + config.pinAreaOffset);
                     const bottomY = isInverted ? boardHeight * 0.3 : -boardHeight * 0.7;
                     
                     // Check if ball should settle in a bin
@@ -249,6 +251,9 @@ function createBoard() {
     const boardWidth = config.binCount * config.pinSpacing;
     const boardHeight = config.rows * config.pinSpacing;
     
+    // 針腳區域向上偏移量 - 使用配置中的值
+    const pinAreaOffset = config.pinAreaOffset;
+    
     // 創建更短、更寬的高爾頓板 - 整體比例更扁
     const boardGeometry = new THREE.BoxGeometry(boardWidth + 0.5, boardHeight * 1.5, 0.1);
     const boardMaterial = new THREE.MeshPhongMaterial({
@@ -272,7 +277,7 @@ function createBoard() {
         emissiveIntensity: 0.2
     });
     
-    // 創建針腳，拉近間距
+    // 創建針腳，拉近間距，並提高整體針腳區位置
     for (let row = 0; row < config.rows; row++) {
         const pinCount = row + 1;
         const rowOffset = (config.binCount - pinCount) * config.pinSpacing / 2;
@@ -280,14 +285,29 @@ function createBoard() {
         for (let i = 0; i < pinCount; i++) {
             const pin = new THREE.Mesh(pinGeometry, pinMaterial);
             const xPos = i * config.pinSpacing + rowOffset;
-            const yPos = -row * config.pinSpacing + boardHeight * 0.2;
+            // 調整y位置，向上偏移
+            const yPos = -row * config.pinSpacing + boardHeight * (0.2 + pinAreaOffset);
             pin.position.set(xPos - boardWidth/2 + config.pinSpacing/2, yPos, 0);
             state.sceneContainer.add(pin);
             state.pins.push(pin);
         }
     }
     
-    // 創建收集區域 - 縮小高度並上移
+    // 創建一個分隔線，明確區分針腳區和收集區
+    const separatorGeometry = new THREE.BoxGeometry(boardWidth + 0.5, 0.05, 0.15);
+    const separatorMaterial = new THREE.MeshPhongMaterial({
+        color: 0xf5c542,
+        transparent: true,
+        opacity: 0.7,
+        emissive: 0xf5c542,
+        emissiveIntensity: 0.3
+    });
+    const separator = new THREE.Mesh(separatorGeometry, separatorMaterial);
+    // 將分隔線放在針腳區和收集區之間
+    separator.position.set(0, -boardHeight * 0.5, 0);
+    state.sceneContainer.add(separator);
+    
+    // 創建收集區域 - 縮小高度並保持在底部
     const collectionAreaGeometry = new THREE.BoxGeometry(boardWidth + 0.5, boardHeight * 0.35, 0.1);
     const collectionAreaMaterial = new THREE.MeshPhongMaterial({
         color: 0x333333,
@@ -295,7 +315,7 @@ function createBoard() {
         opacity: 0.6,
     });
     const collectionArea = new THREE.Mesh(collectionAreaGeometry, collectionAreaMaterial);
-    // 將收集區域上移
+    // 保持收集區域在底部
     collectionArea.position.set(0, -boardHeight * 0.7, -0.15);
     state.sceneContainer.add(collectionArea);
     
@@ -391,7 +411,7 @@ function createBoard() {
     rightWall.position.set(boardWidth/2 + 0.05, 0, 0);
     state.sceneContainer.add(rightWall);
     
-    // 創建頂部漏斗
+    // 創建頂部漏斗 - 也需要向上移動以匹配針腳區
     const funnelGeometry = new THREE.ConeGeometry(boardWidth * 0.1, boardHeight * 0.2, 32, 1, true);
     const funnelMaterial = new THREE.MeshPhongMaterial({
         color: 0xdddddd,
@@ -404,7 +424,8 @@ function createBoard() {
     
     const funnel = new THREE.Mesh(funnelGeometry, funnelMaterial);
     funnel.rotation.x = Math.PI; // 旋轉使尖端朝下
-    funnel.position.set(0, boardHeight * 0.3, 0);
+    // 調整漏斗位置，向上偏移與針腳區一致
+    funnel.position.set(0, boardHeight * (0.3 + pinAreaOffset), 0);
     state.sceneContainer.add(funnel);
     
     // 創建底座 - 增加視覺層次
@@ -539,9 +560,14 @@ function addBall() {
     const boardWidth = config.binCount * config.pinSpacing;
     const boardHeight = config.rows * config.pinSpacing;
     
+    // 针腳區域向上偏移量 - 使用配置中的值
+    const pinAreaOffset = config.pinAreaOffset;
+    
     // Determine start position based on device orientation
     const startX = (Math.random() - 0.5) * 0.2;
-    const startY = state.isInverted ? -boardHeight * 0.7 : boardHeight * 0.3;
+    // 調整球的起始位置與漏斗位置完全一致
+    const funnelPosition = boardHeight * (0.3 + pinAreaOffset);
+    const startY = state.isInverted ? -boardHeight * 0.7 : funnelPosition;
     const initialVelocity = state.isInverted ? new THREE.Vector3(0, 5, 0) : new THREE.Vector3(0, 0, 0);
     
     // 創建球 - 增加發光效果使其更明顯
