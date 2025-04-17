@@ -653,7 +653,7 @@ function createBoard() {
     state.sceneContainer.add(rightWall);
     
     // 創建頂部漏斗 - 也需要向上移動以匹配針腳區
-    const funnelGeometry = new THREE.ConeGeometry(boardWidth * 0.1, boardHeight * 0.2, 32, 1, true);
+    const funnelGeometry = new THREE.ConeGeometry(boardWidth * 0.07, boardHeight * 0.15, 32, 1, true);
     const funnelMaterial = new THREE.MeshPhongMaterial({
         color: 0xdddddd,
         transparent: true,
@@ -665,8 +665,8 @@ function createBoard() {
     
     const funnel = new THREE.Mesh(funnelGeometry, funnelMaterial);
     funnel.rotation.x = Math.PI; // 旋轉使尖端朝下
-    // 調整漏斗位置，向上偏移與針腳區一致
-    funnel.position.set(0, boardHeight * (0.3 + pinAreaOffset), 0);
+    // 調整漏斗位置，向上偏移更多
+    funnel.position.set(0, boardHeight * (0.4 + pinAreaOffset), 0);
     state.sceneContainer.add(funnel);
     
     // 創建底座 - 增加視覺層次，位置調整以適應新的收集區高度
@@ -807,7 +807,7 @@ function addBall() {
     // Determine start position
     const startX = (Math.random() - 0.5) * 0.2;
     // 設置球的起始位置
-    const funnelPosition = boardHeight * (0.3 + pinAreaOffset);
+    const funnelPosition = boardHeight * (0.4 + pinAreaOffset);
     const startY = funnelPosition;
     const initialVelocity = new THREE.Vector3(0, 0, 0);
     
