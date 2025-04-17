@@ -291,6 +291,27 @@ function setupBoardControls() {
     controlsContainer.style.color = 'white';
     controlsContainer.style.zIndex = '1000';
     controlsContainer.style.maxWidth = '250px';
+    controlsContainer.style.transition = 'transform 0.3s ease-in-out, right 0.3s ease-in-out';
+    controlsContainer.style.boxShadow = '0 3px 10px rgba(0, 0, 0, 0.3)';
+    
+    // 創建切換按鈕
+    const toggleButton = document.createElement('button');
+    toggleButton.id = 'toggle-controls';
+    toggleButton.textContent = '⚙️';
+    toggleButton.style.position = 'fixed';
+    toggleButton.style.top = '10px';
+    toggleButton.style.right = '10px';
+    toggleButton.style.zIndex = '1001';
+    toggleButton.style.padding = '8px 12px';
+    toggleButton.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    toggleButton.style.color = 'white';
+    toggleButton.style.border = 'none';
+    toggleButton.style.borderRadius = '5px';
+    toggleButton.style.cursor = 'pointer';
+    toggleButton.style.display = 'none'; // 默認隱藏，在窄螢幕上才顯示
+    toggleButton.style.fontSize = '18px';
+    toggleButton.style.boxShadow = '0 2px 5px rgba(0, 0, 0, 0.2)';
+    toggleButton.style.transition = 'background-color 0.3s ease';
     
     // 創建標題
     const title = document.createElement('h3');
@@ -376,6 +397,49 @@ function setupBoardControls() {
     
     // 添加到文檔
     document.body.appendChild(controlsContainer);
+    document.body.appendChild(toggleButton);
+    
+    // 添加切換按鈕的懸停效果
+    toggleButton.addEventListener('mouseover', function() {
+        this.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+    });
+    
+    toggleButton.addEventListener('mouseout', function() {
+        this.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    });
+    
+    // 切換控制面板顯示/隱藏
+    toggleButton.addEventListener('click', function() {
+        const isHidden = controlsContainer.style.transform === 'translateX(100%)';
+        if (isHidden) {
+            controlsContainer.style.transform = 'translateX(0)';
+            toggleButton.textContent = '×';
+        } else {
+            controlsContainer.style.transform = 'translateX(100%)';
+            toggleButton.textContent = '⚙️';
+        }
+    });
+    
+    // 根據螢幕寬度調整控制面板顯示
+    function adjustControlsVisibility() {
+        const narrowScreen = window.innerWidth < 768;
+        if (narrowScreen) {
+            toggleButton.style.display = 'block';
+            controlsContainer.style.transform = 'translateX(100%)'; // 默認隱藏
+            controlsContainer.style.right = '0'; // 確保面板完全貼在右側
+            toggleButton.textContent = '⚙️'; // 重置切換按鈕圖標
+        } else {
+            toggleButton.style.display = 'none';
+            controlsContainer.style.transform = 'translateX(0)'; // 默認顯示
+            controlsContainer.style.right = '10px'; // 恢復原來的位置
+        }
+    }
+    
+    // 初始調整
+    adjustControlsVisibility();
+    
+    // 當視窗大小改變時調整
+    window.addEventListener('resize', adjustControlsVisibility);
 }
 
 // 重建高爾頓板
