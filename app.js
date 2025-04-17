@@ -3,22 +3,22 @@ const config = {
     // 球體大小將根據針腳間距自動計算
     pinSize: 0.08,
     pinSpacing: 0.5,  // 縮小針腳間距
-    rows: 12,         // 增加行數
-    binCount: 13,     // rows + 1
+    rows: 20,         // 增加行數
+    binCount: 21,     // rows + 1
     ballColor: 0xffffff,
     pinColor: 0xf5c542,
     gravity: 9.8,
     restitution: 0.5, // Bounce factor
     damping: 0.98,
-    maxBalls: 500,    // 增加最大球數量
-    maxSettledBalls: 300, // 收集區允許的最大球數
+    maxBalls: 1000,    // 增加最大球數量
+    maxSettledBalls: 1000, // 收集區允許的最大球數
     ballDelay: 150,   // ms between ball drops
     ballStackOffset: 0.3, // 調整球在箱子中的堆疊間距，增加堆疊密度
     boardColor: 0x444444,
     binColor: 0x555555,
     standColor: 0x222222,
     // 縮放因子 - 用於整體縮小場景使所有元素在視野中
-    scaleFactor: 0.6,  // 更小的縮放因子以適應更寬的板
+    scaleFactor: 0.35,  // 更小的縮放因子以適應更寬的板
     // 相機設置
     cameraZoom: 35,   // 更廣的視野
     // 針腳區域向上偏移量
@@ -105,9 +105,12 @@ const state = {
                     // Top and bottom based on device orientation, 考慮針腳區偏移
                     const isInverted = state.isInverted;
                     const topY = isInverted ? -boardHeight * 0.7 : boardHeight * (0.3 + config.pinAreaOffset);
-                    const bottomY = isInverted ? boardHeight * 0.3 : -boardHeight * 0.7;
+                    // 底部邊界，對應收集區的頂部邊緣
+                    const bottomY = isInverted ? boardHeight * 0.3 : -boardHeight * 0.8;
+                    // 收集區底部位置
+                    const binFloorY = isInverted ? boardHeight * 0.3 : -boardHeight * 1.05;
                     
-                    // Check if ball should settle in a bin
+                    // Check if ball has reached the collection area
                     if ((isInverted && ball.position.y < bottomY) || 
                         (!isInverted && ball.position.y < bottomY)) {
                         // Determine which bin based on x position
@@ -120,10 +123,18 @@ const state = {
                             ball.position.x = bin.position.x;
                             if (isInverted) {
                                 // 如果裝置倒置，球在頂部的收集箱中堆疊
-                                ball.position.y = bottomY + (ballsInBin * config.getBallSize() * config.ballStackOffset);
+                                // 確保球體至少在收集區底部
+                                ball.position.y = Math.max(
+                                    binFloorY + config.getBallSize() * 0.5,
+                                    bottomY + (ballsInBin * config.getBallSize() * config.ballStackOffset)
+                                );
                             } else {
                                 // 正常方向，球在底部的收集箱中堆疊
-                                ball.position.y = bottomY + (ballsInBin * config.getBallSize() * config.ballStackOffset);
+                                // 確保球體至少在收集區底部
+                                ball.position.y = Math.max(
+                                    binFloorY + config.getBallSize() * 0.5,
+                                    bottomY + (ballsInBin * config.getBallSize() * config.ballStackOffset)
+                                );
                             }
                             
                             ball.position.z = 0;
@@ -131,6 +142,26 @@ const state = {
                             ball.settled = true;
                             
                             // Update bin count
+                            bin.userData.ballCount = ballsInBin + 1;
+                        }
+                    }
+                    
+                    // 額外檢查，如果球體位置低於收集區底部，將其重置到收集區底部
+                    if (!isInverted && ball.position.y < binFloorY) {
+                        // 找到最近的收集槽
+                        const binIndex = Math.floor((ball.position.x + boardWidth/2) / config.pinSpacing);
+                        if (binIndex >= 0 && binIndex < config.binCount) {
+                            const bin = state.bins[binIndex];
+                            const ballsInBin = bin.userData.ballCount || 0;
+                            
+                            // 強制定位到收集槽底部
+                            ball.position.x = bin.position.x;
+                            ball.position.y = binFloorY + config.getBallSize() * 0.5;
+                            ball.position.z = 0;
+                            ball.velocity.set(0, 0, 0);
+                            ball.settled = true;
+                            
+                            // 更新收集槽計數
                             bin.userData.ballCount = ballsInBin + 1;
                         }
                     }
@@ -449,19 +480,19 @@ function createBoard() {
     separator.position.set(0, -boardHeight * 0.5, 0);
     state.sceneContainer.add(separator);
     
-    // 創建收集區域 - 縮小高度並保持在底部
-    const collectionAreaGeometry = new THREE.BoxGeometry(boardWidth + 0.5, boardHeight * 0.35, 0.1);
+    // 創建收集區域 - 縮小高度並保持在底部，但增加高度以容納更多球
+    const collectionAreaGeometry = new THREE.BoxGeometry(boardWidth + 0.5, boardHeight * 0.5, 0.1);
     const collectionAreaMaterial = new THREE.MeshPhongMaterial({
         color: 0x333333,
         transparent: true,
         opacity: 0.6,
     });
     const collectionArea = new THREE.Mesh(collectionAreaGeometry, collectionAreaMaterial);
-    // 保持收集區域在底部
-    collectionArea.position.set(0, -boardHeight * 0.7, -0.15);
+    // 保持收集區域在底部，略微降低位置
+    collectionArea.position.set(0, -boardHeight * 0.8, -0.15);
     state.sceneContainer.add(collectionArea);
     
-    // 創建底部高亮 - 更明顯
+    // 創建底部高亮 - 更明顯，位置隨收集區調整
     const bottomHighlightGeometry = new THREE.BoxGeometry(boardWidth + 0.5, 0.1, 0.2);
     const bottomHighlightMaterial = new THREE.MeshPhongMaterial({
         color: 0xf5c542,
@@ -471,13 +502,13 @@ function createBoard() {
         emissiveIntensity: 0.5
     });
     const bottomHighlight = new THREE.Mesh(bottomHighlightGeometry, bottomHighlightMaterial);
-    bottomHighlight.position.set(0, -boardHeight * 0.7, 0.1);
+    bottomHighlight.position.set(0, -boardHeight * 0.8, 0.1);
     state.sceneContainer.add(bottomHighlight);
     
     // 創建收集槽 - 更明顯的分隔和底部
     const binWidth = config.pinSpacing * 0.95;
     
-    // 先創建一個收集區域底部
+    // 先創建一個收集區域底部，將其位置調低
     const binBaseGeometry = new THREE.BoxGeometry(boardWidth + 0.5, 0.1, 0.15);
     const binBaseMaterial = new THREE.MeshPhongMaterial({
         color: 0xdddddd,
@@ -487,14 +518,15 @@ function createBoard() {
         emissiveIntensity: 0.2
     });
     const binBase = new THREE.Mesh(binBaseGeometry, binBaseMaterial);
-    binBase.position.set(0, -boardHeight * 0.85, 0);
+    // 將底部位置大幅降低，使收集區能夠容納更多球
+    binBase.position.set(0, -boardHeight * 1.05, 0);
     state.sceneContainer.add(binBase);
     
     // 創建收集槽
     for (let i = 0; i < config.binCount; i++) {
-        // 創建分隔板 - 使其更加明顯
+        // 創建分隔板 - 使其更加明顯，並延長高度
         if (i > 0) {
-            const dividerGeometry = new THREE.BoxGeometry(0.03, boardHeight * 0.35, 0.15);
+            const dividerGeometry = new THREE.BoxGeometry(0.03, boardHeight * 0.5, 0.15);
             const dividerMaterial = new THREE.MeshPhongMaterial({ 
                 color: 0xaaaaaa,
                 transparent: true,
@@ -506,13 +538,13 @@ function createBoard() {
             const divider = new THREE.Mesh(dividerGeometry, dividerMaterial);
             divider.position.set(
                 (i * config.pinSpacing) - boardWidth/2,
-                -boardHeight * 0.7,
+                -boardHeight * 0.8,
                 0
             );
             state.sceneContainer.add(divider);
         }
         
-        // 創建每個收集格的底部
+        // 創建每個收集格的底部，位置調低
         const binFloorGeometry = new THREE.BoxGeometry(binWidth, 0.05, 0.15);
         const binFloorMaterial = new THREE.MeshPhongMaterial({ 
             color: 0xdddddd,
@@ -525,11 +557,16 @@ function createBoard() {
         const binFloor = new THREE.Mesh(binFloorGeometry, binFloorMaterial);
         binFloor.position.set(
             (i * config.pinSpacing) - boardWidth/2 + config.pinSpacing/2,
-            -boardHeight * 0.85,
+            -boardHeight * 1.05,
             0
         );
         
-        binFloor.userData = { ballCount: 0 };
+        // 添加底部碰撞檢測數據
+        binFloor.userData = { 
+            ballCount: 0,
+            isFloor: true,
+            floorY: -boardHeight * 1.05
+        };
         state.sceneContainer.add(binFloor);
         state.bins.push(binFloor);
     }
@@ -570,14 +607,14 @@ function createBoard() {
     funnel.position.set(0, boardHeight * (0.3 + pinAreaOffset), 0);
     state.sceneContainer.add(funnel);
     
-    // 創建底座 - 增加視覺層次
+    // 創建底座 - 增加視覺層次，位置調整以適應新的收集區高度
     const standGeometry = new THREE.BoxGeometry(boardWidth * 0.9, boardHeight * 0.1, 0.2);
     const standMaterial = new THREE.MeshPhongMaterial({
         color: 0x333333,
         transparent: false
     });
     const stand = new THREE.Mesh(standGeometry, standMaterial);
-    stand.position.set(0, -boardHeight * 0.95, -0.1);
+    stand.position.set(0, -boardHeight * 1.1, -0.1);
     state.sceneContainer.add(stand);
 }
 

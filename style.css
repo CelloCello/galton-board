@@ -146,6 +146,12 @@ button:active {
     text-align: center;
 }
 
+#ball-count {
+    width: 100px;
+    padding: 10px;
+    font-size: 1.1rem;
+}
+
 /* For small devices and portrait orientation */
 @media (max-width: 768px) or (orientation: portrait) {
     .device-container {
@@ -167,7 +173,7 @@ button:active {
         padding: 10px;
         font-size: 1.1rem;
     }
-    
+ 
     button {
         padding: 10px 20px;
         font-size: 1.1rem;
