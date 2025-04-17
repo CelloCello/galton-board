@@ -2,6 +2,8 @@
 
 A fun, interactive Galton board (also known as a bean machine or quincunx) simulation built with Three.js. This application demonstrates probability distribution in a visually engaging way, suitable for both education and entertainment.
 
+url: https://cellocello.github.io/galton-board
+
 ## Features
 
 - Interactive 3D Galton board simulation

@@ -2,6 +2,8 @@
 
 一個有趣、互動式的高爾頓板（又稱豆機或球落板）模擬器，使用 Three.js 構建。這個應用程序以視覺化的方式展示概率分布，適合兒童教育和娛樂。
 
+url: https://cellocello.github.io/galton-board
+
 ## 功能特色
 
 - 互動式 3D 高爾頓板模擬
