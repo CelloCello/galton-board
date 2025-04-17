@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galton Board for Kids</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <div id="container"></div>
+        <div class="controls">
+            <button id="reset-btn">Reset</button>
+            <div class="ball-control">
+                <input type="number" id="ball-count" min="1" max="100" value="20" class="ball-input">
+                <button id="start-btn">Start</button>
+            </div>
+        </div>
+        <div class="instructions">
+            <p>Turn your device upside down to reset like an hourglass!</p>
+        </div>
+    </div>
+
+    <!-- 使用傳統的 script 標籤 -->
+    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+    <!-- 這裡不需要再引入 OrbitControls，我們將在 app.js 中自己實現簡單的相機控制 -->
+    <script src="app.js"></script>
+</body>
+</html> 
