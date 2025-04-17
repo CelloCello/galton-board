@@ -40,7 +40,6 @@ const state = {
     pins: [],
     bins: [],
     lastTime: 0,
-    isInverted: false,
     isAddingBalls: false,
     ballAddInterval: null,
     totalBallsToAdd: 50, // 預設球數
@@ -53,7 +52,7 @@ const state = {
             // Simple physics simulation
             state.balls.forEach(ball => {
                 if (!ball.settled) {
-                    // Apply gravity (方向會根據設備方向改變)
+                    // Apply gravity
                     ball.velocity.add(this.gravity.clone().multiplyScalar(delta));
                     
                     // Apply damping
@@ -102,17 +101,15 @@ const state = {
                     const boardWidth = config.binCount * config.pinSpacing;
                     const boardHeight = config.rows * config.pinSpacing;
                     
-                    // Top and bottom based on device orientation, 考慮針腳區偏移
-                    const isInverted = state.isInverted;
-                    const topY = isInverted ? -boardHeight * 0.7 : boardHeight * (0.3 + config.pinAreaOffset);
+                    // Top and bottom boundaries
+                    const topY = boardHeight * (0.3 + config.pinAreaOffset);
                     // 底部邊界，對應收集區的頂部邊緣
-                    const bottomY = isInverted ? boardHeight * 0.3 : -boardHeight * 0.8;
+                    const bottomY = -boardHeight * 0.8;
                     // 收集區底部位置
-                    const binFloorY = isInverted ? boardHeight * 0.3 : -boardHeight * 1.05;
+                    const binFloorY = -boardHeight * 1.05;
                     
                     // Check if ball has reached the collection area
-                    if ((isInverted && ball.position.y < bottomY) || 
-                        (!isInverted && ball.position.y < bottomY)) {
+                    if (ball.position.y < bottomY) {
                         // Determine which bin based on x position
                         const binIndex = Math.floor((ball.position.x + boardWidth/2) / config.pinSpacing);
                         if (binIndex >= 0 && binIndex < config.binCount) {
@@ -121,21 +118,12 @@ const state = {
                             
                             // Set final position in the bin
                             ball.position.x = bin.position.x;
-                            if (isInverted) {
-                                // 如果裝置倒置，球在頂部的收集箱中堆疊
-                                // 確保球體至少在收集區底部
-                                ball.position.y = Math.max(
-                                    binFloorY + config.getBallSize() * 0.5,
-                                    bottomY + (ballsInBin * config.getBallSize() * config.ballStackOffset)
-                                );
-                            } else {
-                                // 正常方向，球在底部的收集箱中堆疊
-                                // 確保球體至少在收集區底部
-                                ball.position.y = Math.max(
-                                    binFloorY + config.getBallSize() * 0.5,
-                                    bottomY + (ballsInBin * config.getBallSize() * config.ballStackOffset)
-                                );
-                            }
+                            // 正常方向，球在底部的收集箱中堆疊
+                            // 確保球體至少在收集區底部
+                            ball.position.y = Math.max(
+                                binFloorY + config.getBallSize() * 0.5,
+                                bottomY + (ballsInBin * config.getBallSize() * config.ballStackOffset)
+                            );
                             
                             ball.position.z = 0;
                             ball.velocity.set(0, 0, 0);
@@ -147,7 +135,7 @@ const state = {
                     }
                     
                     // 額外檢查，如果球體位置低於收集區底部，將其重置到收集區底部
-                    if (!isInverted && ball.position.y < binFloorY) {
+                    if (ball.position.y < binFloorY) {
                         // 找到最近的收集槽
                         const binIndex = Math.floor((ball.position.x + boardWidth/2) / config.pinSpacing);
                         if (binIndex >= 0 && binIndex < config.binCount) {
@@ -240,11 +228,6 @@ function init() {
     
     // Handle window resize
     window.addEventListener('resize', onWindowResize);
-    
-    // Setup device orientation for mobile
-    if (window.DeviceOrientationEvent) {
-        window.addEventListener('deviceorientation', handleOrientation);
-    }
     
     // 添加高爾頓板參數調整控制項
     setupBoardControls();
@@ -721,7 +704,7 @@ function addBall() {
                                 
                                 for (let i = 0; i < sameBinBalls.length; i++) {
                                     const boardHeight = config.rows * config.pinSpacing;
-                                    const bottomY = state.isInverted ? boardHeight * 0.3 : -boardHeight * 0.7;
+                                    const bottomY = -boardHeight * 0.7;
                                     sameBinBalls[i].position.y = bottomY + (i * config.getBallSize() * config.ballStackOffset);
                                 }
                                 
@@ -742,12 +725,12 @@ function addBall() {
     // 针腳區域向上偏移量 - 使用配置中的值
     const pinAreaOffset = config.pinAreaOffset;
     
-    // Determine start position based on device orientation
+    // Determine start position
     const startX = (Math.random() - 0.5) * 0.2;
-    // 調整球的起始位置與漏斗位置完全一致
+    // 設置球的起始位置
     const funnelPosition = boardHeight * (0.3 + pinAreaOffset);
-    const startY = state.isInverted ? -boardHeight * 0.7 : funnelPosition;
-    const initialVelocity = state.isInverted ? new THREE.Vector3(0, 5, 0) : new THREE.Vector3(0, 0, 0);
+    const startY = funnelPosition;
+    const initialVelocity = new THREE.Vector3(0, 0, 0);
     
     // 創建球 - 使用自動計算的球體大小
     const ballSize = config.getBallSize();
@@ -837,29 +820,6 @@ function stopSimulation() {
     
     // Update button text
     document.getElementById('start-btn').textContent = 'Start';
-}
-
-function handleOrientation(event) {
-    if (event.beta === null) return;
-    
-    // 當裝置旋轉到接近倒置時，翻轉整個模擬
-    const wasInverted = state.isInverted;
-    state.isInverted = Math.abs(event.beta) > 150;
-    
-    if (wasInverted !== state.isInverted) {
-        // 反轉重力方向
-        state.physicsWorld.gravity.y = state.isInverted ? config.gravity : -config.gravity;
-        
-        // 更新裝置框架的旋轉
-        const deviceFrame = document.querySelector('.device-frame');
-        if (deviceFrame) {
-            deviceFrame.style.transform = state.isInverted ? 'rotate(180deg)' : 'rotate(0deg)';
-        }
-        
-        // 如果有顯著變化且有球，重置並啟動新的模擬
-        resetBoard();
-        startSimulation();
-    }
 }
 
 function onWindowResize() {
